@@ -38,6 +38,7 @@ pub mod llm_engine;
 pub mod browser_automation;
 pub mod ai_agent;
 pub mod google_extractor;
+pub mod auth;
 
 #[cfg(feature = "python")]
 pub mod python;
@@ -54,6 +55,7 @@ pub use llm_engine::*;
 pub use browser_automation::*;
 pub use ai_agent::*;
 pub use google_extractor::*;
+pub use auth::*;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const AUTHOR: &str = "Antor Roy <antorroybabu@gmail.com>";
