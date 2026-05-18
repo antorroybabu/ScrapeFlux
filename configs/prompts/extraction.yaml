@@ -1,0 +1,267 @@
+# ScrapeFlux Prompt Templates
+# Author: Antor Roy
+# Email: antorroybabu@gmail.com
+
+# =============================================================================
+# SYSTEM PROMPTS
+# =============================================================================
+
+system_prompts:
+  # Main system prompt for web scraping agent
+  scraper_agent: |
+    You are ScrapeFlux, an advanced web scraping AI assistant.
+    Your role is to help users extract structured data from web pages.
+    
+    Core capabilities:
+    - Analyze HTML structure and identify data patterns
+    - Generate CSS and XPath selectors for data extraction
+    - Handle dynamic content and JavaScript-rendered pages
+    - Extract text, attributes, links, images, and structured data
+    - Clean and normalize extracted data
+    
+    Always follow these principles:
+    1. Respect robots.txt and website terms of service
+    2. Use the most efficient extraction method
+    3. Handle errors gracefully with fallbacks
+    4. Return structured, validated data
+    5. Provide confidence scores for extractions
+
+  # Prompt for LLM-powered extraction
+  llm_extractor: |
+    You are a data extraction expert for the ScrapeFlux framework.
+    Your task is to extract structured information from HTML content.
+    
+    Output format must be valid JSON matching the provided schema.
+    Focus on accuracy and completeness.
+    Use CSS selectors and XPath expressions as hints.
+    Infer missing data when possible.
+
+  # Prompt for autonomous agent
+  autonomous_agent: |
+    You are ScrapeFlux Agent, an autonomous web scraping system.
+    You can plan and execute complex scraping tasks with minimal guidance.
+    
+    Available tools:
+    - navigate(url): Go to a URL
+    - click(selector): Click an element
+    - type(selector, text): Enter text
+    - extract(schema): Extract data
+    - screenshot(): Take a screenshot
+    - wait(selector, timeout): Wait for element
+    - scroll(direction, amount): Scroll page
+    
+    Think step by step. Use tool calls to complete tasks.
+    Learn from observations and self-correct on errors.
+
+# =============================================================================
+# EXTRACTION PROMPTS
+# =============================================================================
+
+extraction_prompts:
+  # Generic structured data extraction
+  generic: |
+    Extract the following information from this HTML:
+    
+    Schema:
+    {{schema}}
+    
+    Instructions:
+    - Look for elements matching the provided selectors
+    - Extract text content unless attribute is specified
+    - Return nested arrays for repeated elements
+    - Handle missing fields gracefully
+    
+    HTML Content:
+    {{html}}
+    
+    Output JSON only, no explanation.
+
+  # Product extraction (e-commerce)
+  product: |
+    Extract product information from this e-commerce page.
+    
+    Expected fields:
+    - name: Product title/name
+    - price: Product price (numeric value)
+    - currency: Currency code (USD, EUR, etc.)
+    - description: Product description
+    - images: Array of image URLs
+    - rating: Product rating (0-5)
+    - reviews_count: Number of reviews
+    - availability: Stock status
+    - sku: Product SKU/ID
+    - category: Product category path
+    - brand: Brand name
+    
+    Return as JSON array for multiple products, object for single product.
+
+  # Article extraction (blogs, news)
+  article: |
+    Extract article information from this page.
+    
+    Expected fields:
+    - title: Article headline
+    - author: Author name
+    - publish_date: Publication date
+    - content: Full article text
+    - summary: Article summary/abstract
+    - tags: Array of topic tags
+    - category: Article category
+    - images: Featured images
+    - source: Source website name
+    - url: Original article URL
+
+  # Contact extraction
+  contact: |
+    Extract contact information from this page.
+    
+    Expected fields:
+    - email: Email addresses
+    - phone: Phone numbers
+    - address: Physical address
+    - social: Social media links
+    - name: Contact person name
+    - company: Company name
+    - website: Company website
+
+  # Review extraction
+  review: |
+    Extract product/service reviews from this page.
+    
+    Expected fields (per review):
+    - author: Reviewer name
+    - rating: Rating value (1-5)
+    - title: Review headline
+    - content: Review text
+    - date: Review date
+    - helpful_count: Helpful votes
+    - verified: Verified purchase flag
+
+# =============================================================================
+# SELECTION PROMPTS
+# =============================================================================
+
+selection_prompts:
+  # Selector generation
+  generate_selectors: |
+    Analyze this HTML and generate CSS selectors for extracting the data.
+    
+    Target: {{target_description}}
+    
+    HTML:
+    {{html}}
+    
+    Provide 3-5 selectors ranked by reliability:
+    1. Primary selector (most reliable)
+    2. Fallback selectors
+    3. Parent-based selectors
+    
+    Include XPath alternatives for complex structures.
+
+  # Fallback selection strategy
+  fallback_strategy: |
+    Generate a fallback extraction strategy for this page.
+    
+    Primary extraction failed or returned empty.
+    
+    Page structure analysis:
+    {{html_preview}}
+    
+    Suggest alternative approaches:
+    1. Parent element traversal
+    2. Text pattern matching
+    3. Adjacent sibling selection
+    4. Regex pattern extraction
+    5. Heuristic-based extraction
+
+# =============================================================================
+# REASONING PROMPTS
+# =============================================================================
+
+reasoning_prompts:
+  # Error analysis and correction
+  error_analysis: |
+    Analyze this extraction error and suggest corrections.
+    
+    Original task: {{task}}
+    Error: {{error}}
+    HTML context: {{html_snippet}}
+    
+    Provide:
+    1. Root cause analysis
+    2. Suggested selector modifications
+    3. Alternative extraction strategies
+    4. Confidence adjustment
+
+  # Page structure understanding
+  understand_structure: |
+    Analyze the structure of this web page.
+    
+    HTML:
+    {{html}}
+    
+    Identify:
+    1. Main content areas
+    2. Navigation patterns
+    3. Data organization
+    4. JavaScript-rendered elements
+    5. Pagination structure
+    6. Filter/sort mechanisms
+
+# =============================================================================
+# AGENT PROMPTS
+# =============================================================================
+
+agent_prompts:
+  # Task planning
+  task_planning: |
+    Plan a scraping task for: {{goal}}
+    
+    Current page: {{url}}
+    Available time: {{timeout}}
+    Required data: {{data_requirements}}
+    
+    Break down into steps:
+    1. Navigation plan
+    2. Data targets
+    3. Potential obstacles
+    4. Fallback strategies
+    5. Success criteria
+
+  # Self-correction
+  self_correction: |
+    The following approach failed:
+    {{failed_approach}}
+    
+    Error: {{error}}
+    
+    Generate an alternative approach that:
+    1. Addresses the root cause
+    2. Uses different selectors/strategies
+    3. Has fallback options
+    4. Is more robust
+
+# =============================================================================
+# TEMPLATE HELPERS
+# =============================================================================
+
+template_helpers:
+  # Format instructions
+  format_instructions: |
+    Output format: JSON
+    - Use camelCase for field names
+    - Dates in ISO 8601 format
+    - Prices as numbers (no currency symbols)
+    - Empty arrays for missing lists
+    - null for missing singular values
+    - Include _meta field with confidence score
+
+  # Validation rules
+  validation_rules: |
+    Apply these validation rules:
+    - URLs must be absolute
+    - Emails must be valid format
+    - Phone numbers normalized to E.164
+    - Prices as floating point numbers
+    - Ratings clamped to 0-5 range
+    - HTML stripped from text fields

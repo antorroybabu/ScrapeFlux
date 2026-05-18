@@ -1,0 +1,92 @@
+# =============================================================================
+# Project: ScrapeFlux - Advanced Unified Web Scraping Framework
+# Author: Antor Roy
+# Email: antorroybabu@gmail.com
+# License: MIT
+# Description: High-performance web scraping framework combining Rust core with Python API
+#              Built with cutting-edge algorithms and data structures for maximum speed
+# =============================================================================
+
+[package]
+name = "scrapeflux"
+version = "0.1.0"
+authors = ["Antor Roy <antorroybabu@gmail.com>"]
+edition = "2021"
+description = "High-performance unified web scraping framework with Rust core and Python API"
+readme = "README.md"
+license = "MIT"
+keywords = ["web-scraping", "crawling", "extraction", "rust", "python"]
+categories = ["web-programming", "network", "parsing"]
+
+[library]
+name = "scrapeflux"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Web scraping & parsing - High-performance HTML parsing
+scraper = "0.22"
+lol_html = "0.5"
+
+# HTTP client - Async HTTP with connection pooling
+reqwest = { version = "0.12", features = ["json", "cookies", "rustls-tls", "stream"], default-features = false }
+
+# Async runtime - Tokio for async operations
+tokio = { version = "1.40", features = ["full"] }
+
+# Parallel processing - Rayon for data parallelism
+rayon = "1.10"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# URL handling
+url = "2.5"
+robotstxt = "0.7"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Memory management
+bytes = "1.6"
+string_cache = "0.8"
+fxhash = "0.2"
+
+# Caching - LRU cache for performance
+lru = "0.12"
+
+# Bloom filter for deduplication
+bloomfilter = "0.2"
+
+# Python bindings
+pyo3 = { version = "0.24", features = ["extension-module", "anyhow"], optional = true }
+
+# Futures utilities
+futures = "0.3"
+futures-util = "0.3"
+
+# Async traits
+async-trait = "0.1"
+
+# Compression
+flate2 = "1.0"
+brotli = "6.0"
+
+[features]
+default = ["python"]
+python = ["pyo3"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 1
+debug = true

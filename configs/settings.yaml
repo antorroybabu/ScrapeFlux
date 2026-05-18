@@ -1,0 +1,465 @@
+# ScrapeFlux CLI Configuration
+# Author: Antor Roy
+# Email: antorroybabu@gmail.com
+
+# =============================================================================
+# SCRAPEFLUX CONFIG
+# =============================================================================
+
+scrapeflux:
+  # Application settings
+  app:
+    name: "ScrapeFlux"
+    version: "1.0.0"
+    description: "Ultra-Advanced Web Scraping Framework"
+  
+  # API Server settings
+  api:
+    host: "0.0.0.0"
+    port: 8000
+    workers: 4
+    timeout: 60
+    cors_enabled: true
+    cors_origins:
+      - "*"
+  
+  # gRPC Server settings
+  grpc:
+    host: "0.0.0.0"
+    port: 9090
+    max_message_size: 10485760  # 10MB
+  
+  # Metrics server
+  metrics:
+    enabled: true
+    host: "0.0.0.0"
+    port: 8080
+    path: "/metrics"
+
+# =============================================================================
+# CRAWLER SETTINGS
+# =============================================================================
+
+crawler:
+  # Global crawler settings
+  global:
+    user_agent: "ScrapeFlux/1.0 (+https://github.com/antorroy/scrape-flux)"
+    max_depth: 10
+    max_pages: 10000
+    max_time_seconds: 3600
+    respect_robots_txt: true
+    obey_no_follow: true
+    download_delay_seconds: 1.0
+  
+  # Concurrency settings
+  concurrency:
+    max_concurrent_requests: 50
+    max_concurrent_per_domain: 5
+    connection_pool_size: 100
+  
+  # Deduplication
+  deduplication:
+    enabled: true
+    use_bloom_filter: true
+    bloom_expected_items: 100000
+    bloom_false_positive_rate: 0.001
+    check_content_similarity: true
+    similarity_threshold: 0.9
+  
+  # Content extraction
+  extraction:
+    max_html_size_mb: 50
+    extract_text: true
+    extract_links: true
+    extract_images: true
+    extract_metadata: true
+    extract_structured_data: true
+  
+  # Filters
+  filters:
+    allowed_domains: []  # Empty = all domains
+    denied_domains: []
+    url_patterns:
+      allowed: []
+      denied:
+        - ".*\\.pdf$"
+        - ".*\\.zip$"
+        - ".*\\.exe$"
+  
+  # Browser rendering (optional)
+  browser:
+    enabled: false
+    headless: true
+    viewport:
+      width: 1920
+      height: 1080
+    wait_for_network_idle: true
+    network_idle_timeout_ms: 5000
+
+# =============================================================================
+# RATE LIMITING
+# =============================================================================
+
+rate_limiting:
+  # Global rate limit
+  global:
+    enabled: true
+    requests_per_second: 100
+    requests_per_minute: 1000
+    burst_size: 200
+  
+  # Per-domain rate limits
+  per_domain:
+    default:
+      requests_per_second: 10
+      requests_per_minute: 100
+      concurrent_requests: 5
+    
+    small_sites:
+      requests_per_second: 2
+      requests_per_minute: 50
+      concurrent_requests: 2
+    
+    large_sites:
+      requests_per_second: 50
+      requests_per_minute: 1000
+      concurrent_requests: 20
+  
+  # Special domain rate limits
+  special_domains:
+    google.com:
+      requests_per_second: 1
+      requests_per_minute: 10
+    facebook.com:
+      requests_per_second: 2
+      requests_per_minute: 30
+    twitter.com:
+      requests_per_second: 5
+      requests_per_minute: 100
+
+# =============================================================================
+# CACHE SETTINGS
+# =============================================================================
+
+cache:
+  # HTTP response cache
+  http:
+    enabled: true
+    backend: "memory"  # memory, redis, disk
+    ttl_seconds: 3600  # 1 hour
+    max_size_mb: 1024
+    eviction_policy: "lru"
+  
+  # Redis cache (if enabled)
+  redis:
+    url: "redis://localhost:6379"
+    db: 0
+    password: null
+    key_prefix: "scrape:"
+    ttl_seconds: 3600
+  
+  # DNS cache
+  dns:
+    enabled: true
+    ttl_seconds: 300
+  
+  # Robots.txt cache
+  robots:
+    enabled: true
+    ttl_seconds: 86400  # 24 hours
+
+# =============================================================================
+# LLM SETTINGS
+# =============================================================================
+
+llm:
+  # Default provider
+  provider: "openai"
+  
+  # OpenAI settings
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    api_base: "https://api.openai.com/v1"
+    model: "gpt-4"
+    temperature: 0.7
+    max_tokens: 4096
+    timeout_seconds: 60
+  
+  # Anthropic settings
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    api_base: "https://api.anthropic.com"
+    model: "claude-3-sonnet-20240229"
+    max_tokens: 4096
+    timeout_seconds: 60
+  
+  # Extraction settings
+  extraction:
+    use_llm_fallback: true
+    retry_on_empty: 3
+    few_shot_examples: 3
+    validate_output: true
+    confidence_threshold: 0.7
+  
+  # Rate limiting for LLM calls
+  rate_limit:
+    requests_per_minute: 50
+    tokens_per_minute: 100000
+
+# =============================================================================
+# BROWSER SETTINGS
+# =============================================================================
+
+browser:
+  # Playwright settings
+  playwright:
+    browser_type: "chromium"  # chromium, firefox, webkit
+    headless: true
+    slow_mo_ms: 0
+    
+    viewport:
+      width: 1920
+      height: 1080
+      device_scale_factor: 1.0
+    
+    # Navigation settings
+    navigation:
+      timeout_ms: 30000
+      wait_until: "networkidle"
+      wait_for_selector_timeout_ms: 10000
+    
+    # Resource settings
+    resources:
+      block_ads: true
+      block_trackers: false
+      download_path: "./downloads"
+    
+    # Proxy settings
+    proxy:
+      enabled: false
+      server: null
+      username: null
+      password: null
+  
+  # Screenshot settings
+  screenshot:
+    format: "png"  # png, jpeg, webp
+    quality: 90
+    full_page: false
+
+# =============================================================================
+# AGENT SETTINGS
+# =============================================================================
+
+agent:
+  # Default agent config
+  default:
+    max_steps: 50
+    timeout_seconds: 600
+    reasoning_enabled: true
+    self_correction_enabled: true
+    learn_from_history: true
+  
+  # Memory settings
+  memory:
+    short_term_capacity: 200
+    long_term_capacity: 10000
+    working_memory_capacity: 100
+    auto_archive: true
+    archive_after_seconds: 3600
+  
+  # Tool calling
+  tools:
+    max_tool_calls_per_step: 5
+    retry_on_failure: 3
+    tool_timeout_seconds: 30
+  
+  # Reasoning
+  reasoning:
+    chain_of_thought: true
+    plan_ahead: true
+    check_success_criteria: true
+    self_correction: true
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+
+logging:
+  # Log level
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  
+  # Log format
+  format: "json"  # json, text
+  
+  # Log output
+  output:
+    console: true
+    file: true
+    path: "./logs/scrapeflux.log"
+    rotation:
+      enabled: true
+      max_size_mb: 100
+      max_files: 10
+  
+  # Structured logging
+  structured:
+    enabled: true
+    include_request_id: true
+    include_timestamp: true
+    include_caller: true
+  
+  # Log levels per module
+  modules:
+    scrapeflux: "INFO"
+    scrapeflux.crawler: "DEBUG"
+    scrapeflux.llm: "INFO"
+    scrapeflux.agent: "DEBUG"
+
+# =============================================================================
+# MONITORING
+# =============================================================================
+
+monitoring:
+  # Prometheus metrics
+  prometheus:
+    enabled: true
+    port: 8080
+    path: "/metrics"
+  
+  # Metrics to collect
+  metrics:
+    - request_count
+    - request_duration
+    - request_size
+    - response_size
+    - cache_hit_rate
+    - error_rate
+    - crawler_pages_total
+    - crawler_pages_per_second
+    - llm_calls_total
+    - llm_tokens_used
+  
+  # Tracing
+  tracing:
+    enabled: false
+    endpoint: "http://localhost:14268/api/traces"
+    sample_rate: 0.1
+  
+  # Health check
+  health:
+    enabled: true
+    path: "/health"
+    checks:
+      - redis
+      - llm_api
+      - disk_space
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+
+security:
+  # TLS settings
+  tls:
+    enabled: false
+    cert_path: null
+    key_path: null
+  
+  # Authentication
+  auth:
+    enabled: false
+    type: "api_key"  # api_key, jwt, oauth
+    api_keys:
+      - "scrape-api-key-1"
+      - "scrape-api-key-2"
+  
+  # Input sanitization
+  input:
+    max_url_length: 2048
+    max_html_size_mb: 50
+    sanitize_html: true
+    strip_scripts: true
+  
+  # Rate limit by auth
+  auth_rate_limits:
+    default:
+      requests_per_minute: 1000
+    authenticated:
+      requests_per_minute: 10000
+
+# =============================================================================
+# STORAGE
+# =============================================================================
+
+storage:
+  # Output directory
+  output:
+    path: "./output"
+    format: "json"  # json, jsonl, csv, parquet
+  
+  # Checkpoint storage
+  checkpoint:
+    enabled: true
+    path: "./checkpoints"
+    interval_seconds: 300
+  
+  # Database (optional)
+  database:
+    enabled: false
+    type: "sqlite"  # sqlite, postgres, mysql
+    connection_string: "scrape.db"
+  
+  # S3 storage (optional)
+  s3:
+    enabled: false
+    bucket: "scrape-flux-data"
+    region: "us-east-1"
+    prefix: "scrapes/"
+
+# =============================================================================
+# SCHEDULER
+# =============================================================================
+
+scheduler:
+  enabled: false
+  backend: "redis"  # redis, database
+  
+  # Job storage
+  jobs:
+    max_concurrent: 10
+    max_queue_size: 1000
+    default_timeout_seconds: 3600
+  
+  # Cleanup
+  cleanup:
+    enabled: true
+    completed_job_ttl_seconds: 604800  # 7 days
+    failed_job_ttl_seconds: 259200  # 3 days
+
+# =============================================================================
+# ADVANCED FEATURES
+# =============================================================================
+
+advanced:
+  # Experimental features
+  experimental:
+    rl_prioritization: true
+    content_similarity_dedup: true
+    adaptive_rate_limiting: true
+    smart_retry: true
+  
+  # Performance tuning
+  performance:
+    connection_pool_size: 100
+    max_keepalive_connections: 20
+    keepalive_idle_seconds: 30
+    tcp_nodelay: true
+    tcp_keepalive: true
+  
+  # Feature flags
+  features:
+    batch_scraping: true
+    incremental_crawl: true
+    auto_scaling: false
+    multi_region: false

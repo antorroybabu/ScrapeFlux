@@ -1,0 +1,244 @@
+# ScrapeFlux Docker Compose - Complete Deployment Stack
+# Author: Antor Roy
+# Email: antorroybabu@gmail.com
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # ScrapeFlux Core Service
+  # ==========================================================================
+  scrapeflux:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: scrapeflux-core
+    ports:
+      - "8000:8000"  # API server
+      - "8080:8080"  # Metrics
+      - "9090:9090"  # gRPC
+    environment:
+      - SCRAPEFLUX_MODE=production
+      - SCRAPEFLUX_WORKERS=4
+      - SCRAPEFLUX_MAX_CONCURRENCY=100
+      - SCRAPEFLUX_CACHE_SIZE=10000
+      - SCRAPEFLUX_RATE_LIMIT=1000
+      - SCRAPEFLUX_REDIS_URL=redis://redis:6379
+      - SCRAPEFLUX_LOG_LEVEL=INFO
+      - SCRAPEFLUX_PROMETHEUS_ENABLED=true
+      - SCRAPEFLUX_TRACING_ENABLED=true
+    volumes:
+      - scrapeflux-data:/data
+      - scrapeflux-cache:/cache
+      - ./configs:/app/configs:ro
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==========================================================================
+  # ScrapeFlux Worker Service (Horizontal Scaling)
+  # ==========================================================================
+  scrapeflux-worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: scrapeflux-worker
+    command: ["python", "-m", "scrapeflux", "worker", "--concurrency", "50"]
+    environment:
+      - SCRAPEFLUX_MODE=worker
+      - SCRAPEFLUX_WORKERS=2
+      - SCRAPEFLUX_MAX_CONCURRENCY=50
+      - SCRAPEFLUX_REDIS_URL=redis://redis:6379
+      - SCRAPEFLUX_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - SCRAPEFLUX_LOG_LEVEL=INFO
+    volumes:
+      - scrapeflux-data:/data
+      - ./configs:/app/configs:ro
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  # ==========================================================================
+  # ScrapeFlux Agent Service (Autonomous Tasks)
+  # ==========================================================================
+  scrapeflux-agent:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: scrapeflux-agent
+    command: ["python", "-m", "scrapeflux", "agent", "--mode", "autonomous"]
+    environment:
+      - SCRAPEFLUX_MODE=agent
+      - SCRAPEFLUX_MAX_STEPS=100
+      - SCRAPEFLUX_TIMEOUT=3600
+      - SCRAPEFLUX_REDIS_URL=redis://redis:6379
+      - SCRAPEFLUX_OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SCRAPEFLUX_LOG_LEVEL=DEBUG
+    volumes:
+      - scrapeflux-data:/data
+      - ./configs:/app/configs:ro
+      - ./prompts:/app/prompts:ro
+    depends_on:
+      - redis
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # ScrapeFlux Scheduler (Cron-like Jobs)
+  # ==========================================================================
+  scrapeflux-scheduler:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: scrapeflux-scheduler
+    command: ["python", "-m", "scrapeflux", "scheduler", "run"]
+    environment:
+      - SCRAPEFLUX_MODE=scheduler
+      - SCRAPEFLUX_REDIS_URL=redis://redis:6379
+      - SCRAPEFLUX_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./jobs:/app/jobs:ro
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Redis Cache
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: scrapeflux-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ==========================================================================
+  # RabbitMQ Message Queue
+  # ==========================================================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: scrapeflux-rabbitmq
+    ports:
+      - "5672:5672"  # AMQP
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_VHOST=scrapeflux
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # Prometheus Metrics
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: scrapeflux-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Grafana Dashboard
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: scrapeflux-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=scrape123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - scrapeflux-network
+    restart: unless-stopped
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  scrapeflux-network:
+    driver: bridge
+    name: scrapeflux-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  scrapeflux-data:
+    name: scrapeflux-data
+  scrapeflux-cache:
+    name: scrapeflux-cache
+  redis-data:
+    name: scrapeflux-redis-data
+  rabbitmq-data:
+    name: scrapeflux-rabbitmq-data
+  prometheus-data:
+    name: scrapeflux-prometheus-data
+  grafana-data:
+    name: scrapeflux-grafana-data

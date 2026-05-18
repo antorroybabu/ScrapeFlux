@@ -1,0 +1,392 @@
+# ScrapeFlux Agent Configuration
+# Author: Antor Roy
+# Email: antorroybabu@gmail.com
+
+# =============================================================================
+# AGENT CONFIGS
+# =============================================================================
+
+agents:
+  # --------------------------------------------------------------------------
+  # Basic Scraper Agent
+  # --------------------------------------------------------------------------
+  basic_scraper:
+    name: "ScrapeFlux Basic Scraper"
+    description: "Simple single-page scraper for straightforward extraction"
+    
+    model:
+      provider: "openai"
+      model_name: "gpt-3.5-turbo"
+      temperature: 0.3
+      max_tokens: 2048
+    
+    tools:
+      - navigate
+      - extract
+      - screenshot
+    
+    memory:
+      short_term_capacity: 50
+      long_term_capacity: 1000
+      auto_archive: true
+    
+    constraints:
+      max_steps: 10
+      timeout_seconds: 60
+      respect_robots_txt: true
+    
+    extraction:
+      fallback_selectors: 3
+      retry_on_empty: 2
+      validate_output: true
+
+  # --------------------------------------------------------------------------
+  # Advanced Scraper Agent
+  # --------------------------------------------------------------------------
+  advanced_scraper:
+    name: "ScrapeFlux Advanced Scraper"
+    description: "Multi-page scraper with adaptive strategies"
+    
+    model:
+      provider: "openai"
+      model_name: "gpt-4"
+      temperature: 0.5
+      max_tokens: 4096
+    
+    tools:
+      - navigate
+      - click
+      - type
+      - extract
+      - wait
+      - scroll
+      - screenshot
+    
+    memory:
+      short_term_capacity: 200
+      long_term_capacity: 10000
+      working_memory_capacity: 100
+      auto_archive: true
+      archive_after_seconds: 3600
+    
+    constraints:
+      max_steps: 50
+      timeout_seconds: 600
+      respect_robots_txt: true
+      max_pages_per_domain: 1000
+    
+    extraction:
+      fallback_selectors: 5
+      retry_on_empty: 3
+      validate_output: true
+      use_llm_guidance: true
+    
+    strategies:
+      - adaptive_selector_fallback
+      - content_similarity_dedup
+      - page_rank_prioritization
+      - circuit_breaker_protection
+
+  # --------------------------------------------------------------------------
+  # Autonomous Agent
+  # --------------------------------------------------------------------------
+  autonomous_agent:
+    name: "ScrapeFlux Autonomous Agent"
+    description: "Self-directing agent for complex multi-step tasks"
+    
+    model:
+      provider: "openai"
+      model_name: "gpt-4"
+      temperature: 0.7
+      max_tokens: 8192
+    
+    tools:
+      - navigate
+      - click
+      - double_click
+      - type
+      - press
+      - extract
+      - wait
+      - scroll
+      - scroll_to
+      - screenshot
+      - select_option
+      - hover
+      - upload
+    
+    memory:
+      short_term_capacity: 500
+      long_term_capacity: 50000
+      working_memory_capacity: 200
+      auto_archive: true
+      archive_after_seconds: 7200
+      reflection_enabled: true
+    
+    constraints:
+      max_steps: 100
+      timeout_seconds: 3600
+      respect_robots_txt: true
+      max_pages_per_domain: 5000
+      self_correction_enabled: true
+      learn_from_history: true
+    
+    reasoning:
+      chain_of_thought: true
+      plan_ahead: true
+      check_success_criteria: true
+      self_correct: true
+    
+    extraction:
+      fallback_selectors: 10
+      retry_on_empty: 5
+      validate_output: true
+      use_llm_guidance: true
+      infer_missing_fields: true
+    
+    strategies:
+      - adaptive_selector_fallback
+      - content_similarity_dedup
+      - page_rank_prioritization
+      - circuit_breaker_protection
+      - rl_based_prioritization
+      - token_bucket_rate_limiting
+
+  # --------------------------------------------------------------------------
+  # Data Mining Agent
+  # --------------------------------------------------------------------------
+  data_mining_agent:
+    name: "ScrapeFlux Data Mining Agent"
+    description: "Deep extraction agent for large-scale data collection"
+    
+    model:
+      provider: "openai"
+      model_name: "gpt-4-turbo"
+      temperature: 0.2
+      max_tokens: 4096
+    
+    tools:
+      - navigate
+      - click
+      - extract
+      - wait
+      - scroll
+      - screenshot
+    
+    memory:
+      short_term_capacity: 1000
+      long_term_capacity: 100000
+      working_memory_capacity: 500
+      auto_archive: true
+      archive_after_seconds: 14400
+    
+    constraints:
+      max_steps: 200
+      timeout_seconds: 14400
+      respect_robots_txt: true
+      max_pages_per_domain: 50000
+      rate_limit_per_domain: 10
+    
+    extraction:
+      fallback_selectors: 5
+      retry_on_empty: 3
+      validate_output: true
+      use_llm_guidance: true
+      batch_mode: true
+    
+    strategies:
+      - breadth_first_crawl
+      - content_similarity_dedup
+      - parallel_extraction
+      - incremental_saves
+
+# =============================================================================
+# WORKFLOW TEMPLATES
+# =============================================================================
+
+workflows:
+  # --------------------------------------------------------------------------
+  # E-commerce Product Crawling
+  # --------------------------------------------------------------------------
+  ecommerce_products:
+    name: "E-commerce Product Crawler"
+    description: "Extract products from e-commerce site"
+    
+    steps:
+      - action: navigate
+        target: "${START_URL}"
+      
+      - action: wait
+        selector: ".product-grid, .products, [data-product]"
+        timeout_ms: 10000
+      
+      - action: scroll
+        direction: "down"
+        amount: 1000
+        repeat_until:
+          condition: "no_new_products"
+          max_repeats: 20
+      
+      - action: extract
+        schema:
+          name: ".product-title, h2, .title"
+          price: ".price, [class*='price']"
+          image: "img[data-src], img[src]:has(.price)"
+          url: "a[href]:has(.price)"
+      
+      - action: click
+        selector: "next-page-button, .pagination a:contains('Next')"
+        continue_if: "next_page_exists"
+    
+    output:
+      format: "json"
+      file: "products-${DOMAIN}-${TIMESTAMP}.json"
+    
+    constraints:
+      max_products: 10000
+      max_pages: 500
+
+  # --------------------------------------------------------------------------
+  # News Article Archiver
+  # --------------------------------------------------------------------------
+  news_archiver:
+    name: "News Article Archiver"
+    description: "Archive articles from news site"
+    
+    steps:
+      - action: navigate
+        target: "${START_URL}"
+      
+      - action: scroll
+        direction: "down"
+        amount: 2000
+        repeat_until:
+          condition: "no_more_articles"
+          max_repeats: 50
+      
+      - action: extract
+        schema:
+          title: "h1, h2.title"
+          author: "[class*='author'], [rel='author']"
+          date: "time[datetime], .date"
+          content: "article, .content, .post-body"
+          tags: "[class*='tag']:not(button)"
+      
+      - action: click
+        selector: "a:contains('Next'), .next"
+        continue_if: "has_next_page"
+    
+    output:
+      format: "jsonl"
+      file: "articles-${DOMAIN}-${DATE}.jsonl"
+    
+    constraints:
+      max_articles: 50000
+      max_pages: 5000
+
+  # --------------------------------------------------------------------------
+  # Job Board Scraper
+  # --------------------------------------------------------------------------
+  job_scraper:
+    name: "Job Board Scraper"
+    description: "Collect job listings"
+    
+    steps:
+      - action: navigate
+        target: "${START_URL}"
+      
+      - action: wait
+        selector: ".job-card, .job-listing, [data-job-id]"
+        timeout_ms: 15000
+      
+      - action: extract
+        schema:
+          title: ".job-title, h2"
+          company: ".company-name, .company"
+          location: ".location, [class*='location']"
+          salary: ".salary, [class*='salary']"
+          posted_date: ".posted-date, time"
+          description: ".description, .summary"
+      
+      - action: click
+        selector: ".show-more, .load-more, button:contains('More')"
+        continue_if: "has_more_jobs"
+      
+      - action: scroll
+        direction: "down"
+        amount: 1500
+        repeat_until:
+          condition: "no_new_jobs"
+          max_repeats: 30
+    
+    output:
+      format: "csv"
+      file: "jobs-${DOMAIN}-${TIMESTAMP}.csv"
+    
+    constraints:
+      max_jobs: 10000
+      deduplicate_by: "title+company+location"
+
+# =============================================================================
+# SCHEDULED JOBS
+# =============================================================================
+
+schedules:
+  daily_product_update:
+    name: "Daily Product Update"
+    schedule: "0 2 * * *"  # 2 AM daily
+    workflow: ecommerce_products
+    target_urls:
+      - "https://example-store.com/products"
+    notifications:
+      email: true
+      on_failure_only: true
+  
+  weekly_news_archive:
+    name: "Weekly News Archive"
+    schedule: "0 3 * * 0"  # 3 AM every Sunday
+    workflow: news_archiver
+    target_urls:
+      - "https://news.example.com/latest"
+    notifications:
+      slack: true
+  
+  hourly_job_sync:
+    name: "Hourly Job Sync"
+    schedule: "0 * * * *"  # Every hour
+    workflow: job_scraper
+    target_urls:
+      - "https://jobs.example.com/new"
+    deduplicate: true
+
+# =============================================================================
+# RATE LIMITS
+# =============================================================================
+
+rate_limits:
+  default:
+    requests_per_second: 10
+    requests_per_minute: 100
+    concurrent_requests: 5
+    burst_size: 20
+  
+  per_domain:
+    small_sites:
+      requests_per_second: 1
+      requests_per_minute: 20
+      concurrent_requests: 2
+    
+    medium_sites:
+      requests_per_second: 5
+      requests_per_minute: 100
+      concurrent_requests: 5
+    
+    large_sites:
+      requests_per_second: 20
+      requests_per_minute: 500
+      concurrent_requests: 20
+  
+  special_domains:
+    google: 1
+    facebook: 2
+    twitter: 5
