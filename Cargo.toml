@@ -77,6 +77,19 @@ async-trait = "0.1"
 flate2 = "1.0"
 brotli = "6.0"
 
+# DateTime handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID generation
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+# Regex
+regex-lite = "0.1"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
 [features]
 default = ["python"]
 python = ["pyo3"]
